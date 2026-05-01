@@ -1,8 +1,9 @@
 # Claude Code status line — reads JSON from stdin
 # Layout (multi-line):
-#   Line 1: spinner  cwd | branch (or (branch wt:wt)) | session_name | +N dirs
-#   Line 2: model | effort | thinking | context-bar
-#   Line 3: 5hr:N% | 7d:N% | clock | +X -Y
+#   Line 1: spinner  cwd | branch (or (branch wt:wt)) | +N dirs
+#   Line 2: session_name (only item, hidden when empty)
+#   Line 3: model | effort | thinking | context-bar
+#   Line 4: 5hr:N% | 7d:N% | clock | +X -Y
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $inputJson = [Console]::In.ReadToEnd()
@@ -129,40 +130,44 @@ function Join-Parts {
 }
 
 # ---------------------------------------------------------------------------
-# Line 1: spinner cwd | git-branch | session_name (if set) | +N dirs
+# Line 1: spinner cwd | git-branch | +N dirs
 # ---------------------------------------------------------------------------
 $line1Parts = @()
 if ($shortDir)    { $line1Parts += "${C_DIR}${shortDir}${C_RST}" }
 if ($branch)      { $line1Parts += "${C_BRANCH}${branch}${C_RST}" }
-if ($sessionName) { $line1Parts += "${C_SESSION}${sessionName}${C_RST}" }
 if ($dirsPart)    { $line1Parts += $dirsPart }
 $line1 = "${C_SPIN}${spinner}${C_RST} " + (Join-Parts $line1Parts)
 
 # ---------------------------------------------------------------------------
-# Line 2: model | effort:level | think:on | context-bar
+# Line 2: session_name (only item — hidden when no session set)
 # ---------------------------------------------------------------------------
-$line2Parts = @()
-if ($model)        { $line2Parts += "${C_MODEL}${model}${C_RST}" }
-if ($effortLevel)  { $line2Parts += "${C_EFFORT}effort:${effortLevel}${C_RST}" }
-if ($thinkEnabled) { $line2Parts += "${C_THINK}think:on${C_RST}" }
-if ($ctxPart)      { $line2Parts += "${C_CTX}${ctxPart}${C_RST}" }
-$line2 = Join-Parts $line2Parts
+$line2 = if ($sessionName) { "${C_SESSION}${sessionName}${C_RST}" } else { "" }
 
 # ---------------------------------------------------------------------------
-# Line 3: 5hr:N% | 7d:N% | clock | +X -Y
-# Clock always present so line 3 always renders.
+# Line 3: model | effort:level | think:on | context-bar
 # ---------------------------------------------------------------------------
 $line3Parts = @()
-if ($null -ne $rl5h) { $line3Parts += "${C_RATE}5hr:$([int][Math]::Round($rl5h))%${C_RST}" }
-if ($null -ne $rl7d) { $line3Parts += "${C_RATE}7d:$([int][Math]::Round($rl7d))%${C_RST}" }
-$line3Parts += $clockPart
-if ($diffPart)     { $line3Parts += $diffPart }
+if ($model)        { $line3Parts += "${C_MODEL}${model}${C_RST}" }
+if ($effortLevel)  { $line3Parts += "${C_EFFORT}effort:${effortLevel}${C_RST}" }
+if ($thinkEnabled) { $line3Parts += "${C_THINK}think:on${C_RST}" }
+if ($ctxPart)      { $line3Parts += "${C_CTX}${ctxPart}${C_RST}" }
 $line3 = Join-Parts $line3Parts
+
+# ---------------------------------------------------------------------------
+# Line 4: 5hr:N% | 7d:N% | clock | +X -Y
+# Clock always present so line 4 always renders.
+# ---------------------------------------------------------------------------
+$line4Parts = @()
+if ($null -ne $rl5h) { $line4Parts += "${C_RATE}5hr:$([int][Math]::Round($rl5h))%${C_RST}" }
+if ($null -ne $rl7d) { $line4Parts += "${C_RATE}7d:$([int][Math]::Round($rl7d))%${C_RST}" }
+$line4Parts += $clockPart
+if ($diffPart)     { $line4Parts += $diffPart }
+$line4 = Join-Parts $line4Parts
 
 # ---------------------------------------------------------------------------
 # Print — skip empty lines, insert a blank line between rendered lines
 # ---------------------------------------------------------------------------
-$rendered = @($line1, $line2, $line3) | Where-Object { $_ }
+$rendered = @($line1, $line2, $line3, $line4) | Where-Object { $_ }
 for ($i = 0; $i -lt $rendered.Count; $i++) {
     if ($i -gt 0) { Write-Host "" }
     Write-Host $rendered[$i]

@@ -1,9 +1,11 @@
 # Claude Code Statusline — Installation
 
-A custom multi-line statusline for [Claude Code](https://docs.claude.com/en/docs/claude-code) on Windows. Renders three rows above the prompt: directory + git branch + session, model + effort + context bar, and rate limits + clock + diff stats.
+A custom multi-line statusline for [Claude Code](https://docs.claude.com/en/docs/claude-code) on Windows. Renders four rows above the prompt: directory + git branch, session name, model + effort + context bar, and rate limits + clock + diff stats.
 
 ```
-◐ C:/Users/olive/claude_projects | (main wt:experiment) | my-feature
+◐ C:/Users/olive/claude_projects | (main wt:experiment)
+
+my-feature
 
 Opus 4.7 | effort:high | think:on | ▓▓▓▓░░░░░░ 42%
 
@@ -79,9 +81,10 @@ Expect three colored lines separated by blank lines.
 
 | Line | Segments (left → right) |
 | ---- | ----------------------- |
-| 1 | spinner · cwd · git branch (or `(branch wt:worktree)` when in a linked worktree) · session name · `+N dirs` |
-| 2 | model · `effort:<level>` · `think:on` · context bar `▓▓▓▓░░░░░░ N%` |
-| 3 | `5hr:N%` · `7d:N%` · clock `HH:MM` · `+X -Y` diff stats |
+| 1 | spinner · cwd · git branch (or `(branch wt:worktree)` when in a linked worktree) · `+N dirs` |
+| 2 | session name (hidden when no session is set) |
+| 3 | model · `effort:<level>` · `think:on` · context bar `▓▓▓▓░░░░░░ N%` |
+| 4 | `5hr:N%` · `7d:N%` · clock `HH:MM` · `+X -Y` diff stats |
 
 Pre-call (before the first message in a session), the context bar and rate-limit fields stay empty; the line still renders the clock so it's never blank.
 
