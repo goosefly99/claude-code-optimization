@@ -1,9 +1,9 @@
 # Claude Code status line — reads JSON from stdin
-# Layout (multi-line):
-#   Line 1: spinner  cwd | branch (or (branch wt:wt)) | +N dirs
-#   Line 2: session_name (only item, hidden when empty)
-#   Line 3: model | effort | thinking | context-bar
-#   Line 4: 5hr:N% | 7d:N% | clock | +X -Y
+# Layout (multi-line, triple-spaced between rows):
+#   Line 1: spinner  cwd | +N dirs
+#   Line 2: session_name | branch (green) — hidden when both empty
+#   Line 3: model | effort | thinking | context-bar (light-blue fg, light-grey bg)
+#   Line 4: 5hr:N% (orange) | 7d:N% (red-orange) | clock | +X -Y
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $inputJson = [Console]::In.ReadToEnd()
@@ -80,21 +80,23 @@ if ($null -ne $usedPct) {
 # ---------------------------------------------------------------------------
 # ANSI colors
 # ---------------------------------------------------------------------------
-$C_DIR     = "`e[0;36m"   # cyan        — cwd
-$C_BRANCH  = "`e[0;33m"   # yellow      — git branch
-$C_MODEL   = "`e[0;35m"   # magenta     — model
-$C_CTX     = "`e[0;32m"   # green       — context bar
-$C_SESSION = "`e[1;37m"   # bold white  — session name
-$C_EFFORT  = "`e[0;34m"   # blue        — effort level
-$C_THINK   = "`e[0;33m"   # yellow      — thinking flag
-$C_RATE    = "`e[0;31m"   # red         — rate limits
-$C_SPIN    = "`e[0;36m"   # cyan        — spinner
-$C_DIFF_A  = "`e[0;32m"   # green       — lines added
-$C_DIFF_R  = "`e[0;31m"   # red         — lines removed
-$C_DIRS    = "`e[0;34m"   # blue        — added dirs count
-$C_CLOCK   = "`e[2;37m"   # dim white   — clock
-$C_SEP     = "`e[2m"      # dim         — separator
-$C_RST     = "`e[0m"
+$C_DIR      = "`e[0;36m"        # cyan          — cwd
+$C_BRANCH   = "`e[0;32m"        # green         — git branch (line 2)
+$C_MODEL    = "`e[0;35m"        # magenta       — model
+$C_CTX      = "`e[38;5;39m"     # light blue fg — context bar text
+$C_CTX_BG   = "`e[48;5;250m"    # light-grey bg — context bar shading
+$C_SESSION  = "`e[0;90m"        # grey          — session name
+$C_EFFORT   = "`e[0;34m"        # blue          — effort level
+$C_THINK    = "`e[0;33m"        # yellow        — thinking flag
+$C_RATE_5H  = "`e[38;5;208m"    # orange        — 5hr rate limit
+$C_RATE_7D  = "`e[38;5;202m"    # red-orange    — 7d rate limit
+$C_SPIN     = "`e[0;36m"        # cyan          — spinner
+$C_DIFF_A   = "`e[0;32m"        # green         — lines added
+$C_DIFF_R   = "`e[0;31m"        # red           — lines removed
+$C_DIRS     = "`e[0;34m"        # blue          — added dirs count
+$C_CLOCK    = "`e[2;37m"        # dim white     — clock
+$C_SEP      = "`e[2m"           # dim           — separator
+$C_RST      = "`e[0m"
 
 $SEP = "${C_SEP} | ${C_RST}"
 
@@ -130,18 +132,20 @@ function Join-Parts {
 }
 
 # ---------------------------------------------------------------------------
-# Line 1: spinner cwd | git-branch | +N dirs
+# Line 1: spinner cwd | +N dirs
 # ---------------------------------------------------------------------------
 $line1Parts = @()
 if ($shortDir)    { $line1Parts += "${C_DIR}${shortDir}${C_RST}" }
-if ($branch)      { $line1Parts += "${C_BRANCH}${branch}${C_RST}" }
 if ($dirsPart)    { $line1Parts += $dirsPart }
 $line1 = "${C_SPIN}${spinner}${C_RST} " + (Join-Parts $line1Parts)
 
 # ---------------------------------------------------------------------------
-# Line 2: session_name (only item — hidden when no session set)
+# Line 2: session_name | branch (green) — hidden when both empty
 # ---------------------------------------------------------------------------
-$line2 = if ($sessionName) { "${C_SESSION}${sessionName}${C_RST}" } else { "" }
+$line2Parts = @()
+if ($sessionName) { $line2Parts += "${C_SESSION}${sessionName}${C_RST}" }
+if ($branch)      { $line2Parts += "${C_BRANCH}${branch}${C_RST}" }
+$line2 = Join-Parts $line2Parts
 
 # ---------------------------------------------------------------------------
 # Line 3: model | effort:level | think:on | context-bar
@@ -150,7 +154,7 @@ $line3Parts = @()
 if ($model)        { $line3Parts += "${C_MODEL}${model}${C_RST}" }
 if ($effortLevel)  { $line3Parts += "${C_EFFORT}effort:${effortLevel}${C_RST}" }
 if ($thinkEnabled) { $line3Parts += "${C_THINK}think:on${C_RST}" }
-if ($ctxPart)      { $line3Parts += "${C_CTX}${ctxPart}${C_RST}" }
+if ($ctxPart)      { $line3Parts += "${C_CTX_BG}${C_CTX} ${ctxPart} ${C_RST}" }
 $line3 = Join-Parts $line3Parts
 
 # ---------------------------------------------------------------------------
@@ -158,17 +162,18 @@ $line3 = Join-Parts $line3Parts
 # Clock always present so line 4 always renders.
 # ---------------------------------------------------------------------------
 $line4Parts = @()
-if ($null -ne $rl5h) { $line4Parts += "${C_RATE}5hr:$([int][Math]::Round($rl5h))%${C_RST}" }
-if ($null -ne $rl7d) { $line4Parts += "${C_RATE}7d:$([int][Math]::Round($rl7d))%${C_RST}" }
+if ($null -ne $rl5h) { $line4Parts += "${C_RATE_5H}5hr:$([int][Math]::Round($rl5h))%${C_RST}" }
+if ($null -ne $rl7d) { $line4Parts += "${C_RATE_7D}7d:$([int][Math]::Round($rl7d))%${C_RST}" }
 $line4Parts += $clockPart
 if ($diffPart)     { $line4Parts += $diffPart }
 $line4 = Join-Parts $line4Parts
 
 # ---------------------------------------------------------------------------
-# Print — skip empty lines, insert a blank line between rendered lines
+# Print — skip empty lines, insert three blank lines between rendered lines
+# (triple-spaced for improved readability)
 # ---------------------------------------------------------------------------
 $rendered = @($line1, $line2, $line3, $line4) | Where-Object { $_ }
 for ($i = 0; $i -lt $rendered.Count; $i++) {
-    if ($i -gt 0) { Write-Host "" }
+    if ($i -gt 0) { Write-Host ""; Write-Host ""; Write-Host "" }
     Write-Host $rendered[$i]
 }

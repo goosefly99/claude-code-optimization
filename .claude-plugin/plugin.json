@@ -1,0 +1,19 @@
+{
+  "name": "claude-code-optimization",
+  "version": "0.1.0",
+  "description": "Audit and optimize Claude Code: a context/token-waste auditor and a custom multi-line PowerShell statusline.",
+  "author": {
+    "name": "Oliver Casper",
+    "email": "olivercasper@gmail.com"
+  },
+  "keywords": [
+    "claude-code",
+    "context",
+    "tokens",
+    "audit",
+    "optimization",
+    "statusline",
+    "windows",
+    "powershell"
+  ]
+}

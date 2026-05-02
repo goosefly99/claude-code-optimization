@@ -1,38 +1,62 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for working on this repository in Claude Code.
 
 ## Project Overview
 
-This repository contains a Claude Code skill and companion guide for auditing and optimizing Claude Code context usage (token waste, CLAUDE.md bloat, MCP server overhead, settings, file permissions).
+This repository **is** a Claude Code plugin: `claude-code-optimization`. It bundles two user-invocable skills for cutting token waste and customizing the Claude Code prompt.
 
-## Structure
+- `context-audit` — audits CLAUDE.md, skills, MCP servers, settings, and file permissions; returns a health score.
+- `statusline-install` — installs a custom multi-line PowerShell statusline (Windows-only).
+
+See `README.md` for end-user documentation.
+
+## Plugin Layout
 
 ```
-claude_setup_audit_skill/
-  SKILL.md                              — The /context-audit skill definition
-  The Claude Code Context Cleanup Guide.md  — Companion guide document
+.claude-plugin/
+  plugin.json                  — Plugin manifest (name, version, author, etc.)
+skills/
+  context-audit/SKILL.md        — Audit skill (auto-loaded by trigger phrases or slash command)
+  statusline-install/SKILL.md   — Statusline installer skill
+statusline-export/              — Statusline runtime assets referenced by the install skill
+  INSTALL.md                    — Standalone (non-plugin) install guide
+  install.ps1                   — Installer script (patches ~/.claude/settings.json)
+  statusline-command.ps1        — Runtime: reads JSON from stdin, writes ANSI lines
+README.md                       — Plugin overview and install instructions
 ```
+
+Inside skill bodies, reference plugin assets with `${CLAUDE_PLUGIN_ROOT}` — e.g., `${CLAUDE_PLUGIN_ROOT}/statusline-export/install.ps1`. Never hardcode absolute or user-home paths.
 
 ## Skill Format
 
-`SKILL.md` uses a YAML frontmatter block followed by Markdown:
-
 ```yaml
 ---
-name: <slug>
+name: <slug>                    # must match the directory name under skills/
 description: >
-  <when to trigger — determines how Claude Code matches user intents>
-user-invocable: true
+  <triggering phrases and what the skill does — drives intent matching>
+user-invocable: true             # exposes the skill as /<plugin-name>:<slug>
 ---
 ```
 
-- `name` must match the folder name and the slash command (e.g., `context-audit` → `/context-audit`)
-- `description` drives trigger matching — keep it specific and include example phrases
-- Skill body is plain Markdown; Claude follows it as instructions
+- `name` must match the folder name. Slash command is `/claude-code-optimization:<name>`.
+- `description` drives trigger matching — keep it specific, include real phrases users say.
+- Skill body is plain Markdown; Claude follows it as instructions.
+- Use imperative form ("Run `pwsh ...`", not "you may want to run").
 
 ## Editing Guidelines
 
-- When updating skill logic, ensure the five CLAUDE.md filters (Default, Contradiction, Redundancy, Bandaid, Vague) stay consistent between `SKILL.md` and the Guide document — they are the core shared concept.
-- The scoring table in `SKILL.md` Step 3 is the authoritative reference; the Guide is explanatory prose and does not need to replicate exact point values.
-- The Guide references an install URL and a cal.com link — do not change these unless the user explicitly provides updated URLs.
+- The five CLAUDE.md filters (Default, Contradiction, Redundancy, Bandaid, Vague) are the core shared concept of the `context-audit` skill — keep them consistent if referenced elsewhere.
+- The scoring table in `skills/context-audit/SKILL.md` Step 3 is the authoritative reference for point values.
+- When changing the statusline output format, update the layout reference table in **both** `skills/statusline-install/SKILL.md` and `statusline-export/INSTALL.md` — and the preview in `README.md`.
+- When changing the slash command name (`name` in skill frontmatter), grep for the literal string everywhere — README, statusline-install skill, and any cross-references.
+- If you change `plugin.json` `name`, the slash command prefix changes too. Update every `/claude-code-optimization:` reference.
+
+## Verification
+
+There's no test suite or build step. After edits:
+
+1. `git diff` — review the change.
+2. For skill changes: re-load the plugin in a Claude Code session and trigger the skill to confirm it activates and runs end-to-end.
+3. For statusline edits: pipe sample JSON into `statusline-command.ps1` and check the rendered output (sample command in `skills/statusline-install/SKILL.md` Step 3).
+4. For `plugin.json` edits: confirm valid JSON (`pwsh -c "Get-Content .claude-plugin/plugin.json | ConvertFrom-Json"`).

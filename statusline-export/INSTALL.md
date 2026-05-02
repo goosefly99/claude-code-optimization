@@ -1,13 +1,19 @@
 # Claude Code Statusline — Installation
 
-A custom multi-line statusline for [Claude Code](https://docs.claude.com/en/docs/claude-code) on Windows. Renders four rows above the prompt: directory + git branch, session name, model + effort + context bar, and rate limits + clock + diff stats.
+A custom multi-line statusline for [Claude Code](https://docs.claude.com/en/docs/claude-code) on Windows. Renders four rows above the prompt (triple-spaced): directory, session name + git branch, model + effort + context bar (light-grey background), and rate limits + clock + diff stats.
 
 ```
-◐ C:/Users/olive/claude_projects | (main wt:experiment)
+◐ C:/Users/olive/claude_projects
 
-my-feature
 
-Opus 4.7 | effort:high | think:on | ▓▓▓▓░░░░░░ 42%
+
+my-feature | (main wt:experiment)
+
+
+
+Opus 4.7 | effort:high | think:on |  ▓▓▓▓░░░░░░ 42% 
+
+
 
 5hr:6% | 7d:1% | 23:37 | +120 -34
 ```
@@ -16,7 +22,7 @@ Every segment drops silently when its field isn't present in the JSON Claude Cod
 
 ## Bundle contents
 
-The export bundle lives at `C:\Users\olive\claude_projects\statusline-export\` and contains two files:
+The export bundle is the directory containing this `INSTALL.md` (e.g. `<repo>/statusline-export/`) and contains two files:
 
 | File | Purpose |
 | ---- | ------- |
@@ -67,7 +73,7 @@ Useful for testing on a copy or a non-default Claude layout.
 
 ## Verify
 
-After install, restart Claude Code. You should see three colored rows above the prompt input.
+After install, restart Claude Code. You should see four colored rows above the prompt input.
 
 To exercise the script directly without launching Claude:
 
@@ -75,16 +81,18 @@ To exercise the script directly without launching Claude:
 '{"workspace":{"current_dir":"C:/tmp"},"model":{"display_name":"Opus 4.7"},"context_window":{"used_percentage":42},"rate_limits":{"five_hour":{"used_percentage":6},"seven_day":{"used_percentage":1}},"cost":{"total_lines_added":120,"total_lines_removed":34}}' | pwsh -NoProfile -File ~/.claude/statusline-command.ps1
 ```
 
-Expect three colored lines separated by blank lines.
+Expect four colored lines separated by blank lines.
 
 ## Layout reference
 
 | Line | Segments (left → right) |
 | ---- | ----------------------- |
-| 1 | spinner · cwd · git branch (or `(branch wt:worktree)` when in a linked worktree) · `+N dirs` |
-| 2 | session name (hidden when no session is set) |
-| 3 | model · `effort:<level>` · `think:on` · context bar `▓▓▓▓░░░░░░ N%` |
+| 1 | spinner · cwd · `+N dirs` |
+| 2 | session name · git branch (or `(branch wt:worktree)` in a linked worktree) — hidden when both are empty |
+| 3 | model · `effort:<level>` · `think:on` · context bar `▓▓▓▓░░░░░░ N%` (light-grey background shading) |
 | 4 | `5hr:N%` · `7d:N%` · clock `HH:MM` · `+X -Y` diff stats |
+
+Rows are separated by three blank lines (triple-spaced) for extra padding.
 
 Pre-call (before the first message in a session), the context bar and rate-limit fields stay empty; the line still renders the clock so it's never blank.
 
